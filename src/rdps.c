@@ -1,4 +1,7 @@
-
+/*
+ *  This file is based off of the upd_server code provided by the lab instructor.
+ *  Author: Maxwell Borden
+*/
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
