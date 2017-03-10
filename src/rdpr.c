@@ -8,13 +8,25 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h> /* for close() for socket */ 
 #include <stdlib.h>
 
-// UDP Server
+#include "../util/util.h"
 
-int main(void)
+// UDP Server
+int recv_port;
+char* recv_ip;
+char* file_name;
+FILE* file_pointer;
+
+int main(int argc, char* argv[])
 {
+  recv_ip = argv[1];
+  recv_port = atoi(argv[2]);
+  file_name = argv[3];
+  file_pointer = fopen(file_name, "w");
+
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   struct sockaddr_in sa; 
   char buffer[1024];
@@ -23,8 +35,8 @@ int main(void)
 
   memset(&sa, 0, sizeof sa);
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = htonl(INADDR_ANY);
-  sa.sin_port = htons(8080);
+  sa.sin_addr.s_addr = inet_addr(recv_ip);
+  sa.sin_port = htons(recv_port);
   fromlen = sizeof(sa);
 
   if (-1 == bind(sock, (struct sockaddr *)&sa, sizeof sa)) {
