@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "../util/util.h"
+
 // UDP Client
 
 int main(void)
@@ -15,7 +17,7 @@ int main(void)
   int sock;
   struct sockaddr_in sa;
   int bytes_sent;
-  char buffer[200];
+  char buffer[MAXIMUM_SEGMENT_SIZE];
  
   strcpy(buffer, "hello world!");
  

@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   struct sockaddr_in sa; 
-  char buffer[1024];
+  char buffer[MAXIMUM_SEGMENT_SIZE];
   ssize_t recsize;
   socklen_t fromlen;
 

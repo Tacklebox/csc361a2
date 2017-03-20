@@ -2,5 +2,6 @@
 #include "../util/util.h"
 
 int main(void) {
-    printf("test");
+    printf("test\n");
+    packet_header my_ph = 
 }
