@@ -14,6 +14,14 @@
 
 int main(void)
 {
+  
+  send_ip = argv[1];
+  send_port = atoi(argv[2]);
+  recv_ip = argv[3];
+  recv_port = atoi(argv[4]);
+  file_name = argv[5];
+  file_pointer = fopen(file_name, "w");
+
   int sock;
   struct sockaddr_in sa;
   int bytes_sent;
