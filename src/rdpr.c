@@ -46,12 +46,19 @@ int main(int argc, char* argv[])
   }
 
   for (;;) {
-    recsize = recvfrom(sock, (void*)buffer, sizeof buffer, 0, (struct sockaddr*)&sa, &fromlen);
+    recsize = recvfrom(sock, (void*)buffer, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr*)&sa, &fromlen);
     if (recsize < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
-    printf("datagram: %.*s\n", (int)recsize, buffer);
+    packet mypacket;
+    memcpy(mypacket.buf, buffer, MAXIMUM_SEGMENT_SIZE);
+    printf("datagram magic: %s\n", mypacket._magic_);
+    printf("datagram type: %d\n", (int)mypacket._type_);
+    printf("datagram seq: %d\n", mypacket._seqno_or_ackno_);
+    printf("datagram len: %d\n", mypacket._length_or_size_);
+    printf("datagram magic: %s\n", mypacket._data_);
   }
+  return 0;
 }
 
