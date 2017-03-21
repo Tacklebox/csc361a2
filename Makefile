@@ -7,9 +7,6 @@ MKDIR_P = mkdir -p
 
 default: rdps rdpr
 
-test: ${BUILDDIR}/util.o src/test.c
-	${CC} -o test ${CFLAGS} src/test.c
-
 rdpr: directories ${BUILDDIR}/rdpr.o ${BUILDDIR}/util.o
 	${CC} -o rdpr ${CFLAGS} ${BUILDDIR}/rdpr.o ${BUILDDIR}/util.o
 
