@@ -2,6 +2,8 @@
 #define MAXIMUM_SEGMENT_SIZE 1024
 #define DATA_LENGTH 1004
 
+int bind_socket(int*, int, char*);
+
 typedef enum packet_type {
   DAT,
   ACK,

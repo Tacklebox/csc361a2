@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h> /* for close() for socket */ 
+#include <unistd.h> /* for close() for socket */
 #include <stdlib.h>
 
 #include "../util/util.h"
@@ -28,31 +28,34 @@ int main(int argc, char* argv[])
   file_pointer = fopen(file_name, "w");
 
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  struct sockaddr_in sa; 
+  struct sockaddr_in server_addr, client_addr;
   char buffer[MAXIMUM_SEGMENT_SIZE];
   ssize_t recsize;
   socklen_t fromlen;
 
-  memset(&sa, 0, sizeof sa);
-  sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = inet_addr(recv_ip);
-  sa.sin_port = htons(recv_port);
-  fromlen = sizeof(sa);
+  memset(&server_addr, 0, sizeof server_addr);
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = inet_addr(recv_ip);
+  server_addr.sin_port = htons(recv_port);
+  fromlen = sizeof(server_addr);
 
-  if (-1 == bind(sock, (struct sockaddr *)&sa, sizeof sa)) {
+  if (-1 == bind(sock, (struct sockaddr *)&server_addr, sizeof server_addr)) {
     perror("error bind failed");
     close(sock);
     exit(EXIT_FAILURE);
   }
 
   for (;;) {
-    recsize = recvfrom(sock, (void*)buffer, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr*)&sa, &fromlen);
+    recsize = recvfrom(sock, (void*)buffer, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr*)&server_addr, &fromlen);
     if (recsize < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
     }
     packet mypacket;
     memcpy(mypacket.buf, buffer, MAXIMUM_SEGMENT_SIZE);
+    if (mypacket._type_ == DAT) {
+      printf("datagram type is DAT!\n");
+    }
     printf("datagram magic: %s\n", mypacket._magic_);
     printf("datagram type: %d\n", (int)mypacket._type_);
     printf("datagram seq: %d\n", mypacket._seqno_or_ackno_);
