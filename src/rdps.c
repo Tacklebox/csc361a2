@@ -28,11 +28,10 @@ int main(int argc, char* argv[])
   file_name = argv[5];
   file_pointer = fopen(file_name, "r");
 
-  int sock;
   struct sockaddr_in server_addr;
   int bytes_sent;
 
-  bind_socket(&sock, send_port, send_ip);
+  bind_socket(send_port, send_ip);
 
   memset(&server_addr, 0, sizeof server_addr);
   server_addr.sin_family = AF_INET;

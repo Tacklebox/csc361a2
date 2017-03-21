@@ -1,8 +1,15 @@
+#ifndef UTIL_H
+#define UTIL_H
 #define MAGIC_LENGTH 6
 #define MAXIMUM_SEGMENT_SIZE 1024
+#define RDP_HEADER_SIZE 20
 #define DATA_LENGTH 1004
 
-int bind_socket(int*, int, char*);
+int bind_socket(int, char*);
+
+extern int sock;
+
+extern struct sockaddr_in sockaddr_self, sockaddr_other;
 
 typedef enum packet_type {
   DAT,
@@ -11,6 +18,13 @@ typedef enum packet_type {
   FIN,
   RST
 } packet_type;
+
+typedef enum event_type {
+  s,
+  S,
+  r,
+  R
+} event_type;
 
 typedef union packet {
   struct {
@@ -31,3 +45,6 @@ typdef struct packet_queue {
 */
 
 //packet_header create_packet(int seq, packet_type type)
+
+void log_event(event_type e, packet pkt);
+#endif
