@@ -1,12 +1,12 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <arpa/inet.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 #include "../util/util.h"
 
@@ -29,7 +29,6 @@ int main(int argc, char* argv[])
   file_pointer = fopen(file_name, "r");
 
   struct sockaddr_in server_addr;
-  int bytes_sent;
 
   bind_socket(send_port, send_ip);
 
@@ -44,12 +43,6 @@ int main(int argc, char* argv[])
   mypacket._seqno_or_ackno_ = 1337;
   mypacket._length_or_size_ = 11;
   strcpy(mypacket._data_, "0123456789");
-
-  bytes_sent = sendto(sock, mypacket.buf, MAXIMUM_SEGMENT_SIZE, 0,(struct sockaddr*)&server_addr, sizeof server_addr);
-  if (bytes_sent < 0) {
-    printf("Error sending packet: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
 
   close(sock); /* close the socket */
   return 0;

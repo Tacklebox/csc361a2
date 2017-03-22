@@ -8,7 +8,8 @@
 typedef enum connection_state {
   IDLE,
   HIP,
-  CONN
+  CONN,
+  TWAIT
 } connection_state;
 
 typedef enum packet_type {

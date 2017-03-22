@@ -2,15 +2,16 @@
  *  This file is based off of the upd_server code provided by the lab instructor.
  *  Author: Maxwell Borden
 */
-#include <stdio.h>
+
+#include <arpa/inet.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h> /* for close() for socket */
-#include <stdlib.h>
 
 #include "../util/util.h"
 
@@ -29,7 +30,6 @@ int main(int argc, char *argv[]) {
   file_name = argv[3];
   file_pointer = fopen(file_name, "w");
   fromlen = sizeof(struct sockaddr_in);
-  char buffer[MAXIMUM_SEGMENT_SIZE];
 
   bind_socket(recv_port, recv_ip);
   state = IDLE;

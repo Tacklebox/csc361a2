@@ -1,12 +1,13 @@
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h> /* for close() for socket */
+#include <errno.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h> /* for close() for socket */
 
 #include "util.h"
 
@@ -51,16 +52,27 @@ void make_packet(packet* p, packet_type p_t, int s_a, char* p_d, int p_d_l) {
   p->_seqno_or_ackno_ = s_a;
   if(p_t == ACK) {
     p->_length_or_size_ = window_size;
-  } else if(p_t == DAT) {
+  } else if(p_t == DAT && p_d_l > 0) {
     p->_length_or_size_ = p_d_l;
+    memcpy(p->_data_, p_d, p_d_l);
   }
   return;
+}
+
+void send_packet(packet pkt) {
+  int len = (pkt._type_ == DAT)? pkt._length_or_size_+RDP_HEADER_SIZE : RDP_HEADER_SIZE;
+  int bytes_sent;
+  bytes_sent = sendto(sock, pkt.buf, len, 0,(struct sockaddr*)&sockaddr_other, sizeof (struct sockaddr_in));
+  if (bytes_sent < 0) {
+    printf("Error sending packet: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
 }
 
 void send_ack(int ack_no) {
   packet pkt;
   make_packet(&pkt,ACK,1,NULL,0);
-  //send_packet(pkt)
+  send_packet(pkt);
 }
 
 void handle_packet(packet pkt) {
@@ -79,6 +91,7 @@ void handle_packet(packet pkt) {
         close(sock);
         exit(EXIT_FAILURE);
       }
+      send_ack(pkt._seqno_or_ackno_ + pkt._length_or_size_); //TODO: add error control for dropped or ooo packets
       break;
     case ACK:
       break;
@@ -88,6 +101,8 @@ void handle_packet(packet pkt) {
       state = HIP;
       break;
     case FIN:
+      state = TWAIT;
+      send_ack(pkt._seqno_or_ackno_+1);
       break;
     case RST:
       fprintf(stderr, "Error: Connection Reset\n");
