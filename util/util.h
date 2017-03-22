@@ -7,9 +7,11 @@
 
 int bind_socket(int, char*);
 
-extern int sock;
-
-extern struct sockaddr_in sockaddr_self, sockaddr_other;
+typedef enum connection_state {
+  IDLE,
+  HAND,
+  CONN
+} connection_state;
 
 typedef enum packet_type {
   DAT,
@@ -28,12 +30,13 @@ typedef enum event_type {
 
 typedef union packet {
   struct {
-  char _magic_[MAGIC_LENGTH+1]; //"CSC361"
-  packet_type _type_;           //From ENUM above
-  int _seqno_or_ackno_;         //Sequence Number if SYN, FYN, or DAT Acknowledge Number if ACK
-  int _length_or_size_;         //Payload Length if DAT Window Size if ACK
-  char _data_[DATA_LENGTH];     //Actual Data
+    char _magic_[MAGIC_LENGTH+1]; //"CSC361"
+    packet_type _type_;           //From ENUM above
+    int _seqno_or_ackno_;         //Sequence Number if SYN, FYN, or DAT Acknowledge Number if ACK
+    int _length_or_size_;         //Payload Length if DAT Window Size if ACK
+    char _data_[DATA_LENGTH];     //Actual Data
   };
+  
   char buf[MAXIMUM_SEGMENT_SIZE];
 } packet;
 
@@ -47,4 +50,9 @@ typdef struct packet_queue {
 //packet_header create_packet(int seq, packet_type type)
 
 void log_event(event_type e, packet pkt);
+
+extern int sock;
+extern struct sockaddr_in sockaddr_self, sockaddr_other;
+extern connection_state state;
+
 #endif

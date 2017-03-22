@@ -12,6 +12,7 @@
 
 int sock;
 struct sockaddr_in sockaddr_self, sockaddr_other;
+connection_state state;
 
 //packet make_packet(packet_type type, int sack_number, int paydow_length){
 //}

@@ -20,24 +20,24 @@ char *recv_ip;
 char *file_name;
 FILE *file_pointer;
 
+ssize_t recsize;
+socklen_t fromlen;
 int main(int argc, char *argv[])
 {
   recv_ip = argv[1];
   recv_port = atoi(argv[2]);
   file_name = argv[3];
   file_pointer = fopen(file_name, "w");
-
+  fromlen = sizeof(struct sockaddr_in);
   char buffer[MAXIMUM_SEGMENT_SIZE];
 
   bind_socket(recv_port, recv_ip);
-  ssize_t recsize;
-  socklen_t fromlen;
+  state = IDLE;
 
-  fromlen = sizeof(struct sockaddr_in);
-
-  for (;;)
+  while(1)
   {
-    recsize = recvfrom(sock, (void *)buffer, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+    packet mypacket;
+    recsize = recvfrom(sock, (void *)mypacket.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
     if (recsize < 0)
     {
       fprintf(stderr, "%s\n", strerror(errno));
@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
     }
     if (recsize > 0)
     {
-      packet mypacket;
       memcpy(mypacket.buf, buffer, MAXIMUM_SEGMENT_SIZE);
       printf("datagram magic: %s\n", mypacket._magic_);
       printf("datagram type: %d\n", (int)mypacket._type_);
