@@ -5,11 +5,9 @@
 #define RDP_HEADER_SIZE 20
 #define DATA_LENGTH 1004
 
-int bind_socket(int, char*);
-
 typedef enum connection_state {
   IDLE,
-  HAND,
+  HIP,
   CONN
 } connection_state;
 
@@ -47,11 +45,13 @@ typdef struct packet_queue {
 } packet_queue;
 */
 
-//packet_header create_packet(int seq, packet_type type)
+int bind_socket(int, char*);
+void handle_packet(packet);
+void log_event(event_type, packet);
+void make_packet(packet*, packet_type, int, char*, int);
+void send_ack(int);
 
-void log_event(event_type e, packet pkt);
-
-extern int sock;
+extern int sock, window_size;
 extern struct sockaddr_in sockaddr_self, sockaddr_other;
 extern connection_state state;
 

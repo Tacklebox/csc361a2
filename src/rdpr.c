@@ -22,8 +22,8 @@ FILE *file_pointer;
 
 ssize_t recsize;
 socklen_t fromlen;
-int main(int argc, char *argv[])
-{
+
+int main(int argc, char *argv[]) {
   recv_ip = argv[1];
   recv_port = atoi(argv[2]);
   file_name = argv[3];
@@ -34,23 +34,14 @@ int main(int argc, char *argv[])
   bind_socket(recv_port, recv_ip);
   state = IDLE;
 
-  while(1)
-  {
-    packet mypacket;
-    recsize = recvfrom(sock, (void *)mypacket.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
-    if (recsize < 0)
-    {
+  while(1) {
+    packet recv_pkt;
+    recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+    if (recsize < 0) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
-    }
-    if (recsize > 0)
-    {
-      memcpy(mypacket.buf, buffer, MAXIMUM_SEGMENT_SIZE);
-      printf("datagram magic: %s\n", mypacket._magic_);
-      printf("datagram type: %d\n", (int)mypacket._type_);
-      printf("datagram seq: %d\n", mypacket._seqno_or_ackno_);
-      printf("datagram len: %d\n", mypacket._length_or_size_);
-      printf("datagram magic: %s\n", mypacket._data_);
+    } else if (recsize > 0) {
+      handle_packet(recv_pkt);
     }
   }
   return 0;
