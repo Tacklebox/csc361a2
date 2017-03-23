@@ -36,7 +36,7 @@
 #define PQUEUE_H
 
 /** priority data type */
-typedef unsigned long long pqueue_pri_t;
+typedef unsigned int pqueue_pri_t;
 
 /** callback functions to get/set/compare the priority of an element */
 typedef pqueue_pri_t (*pqueue_get_pri_f)(void *a);
@@ -161,7 +161,7 @@ void *pqueue_peek(pqueue_t *q);
  * @param the callback function to print the entry
  */
 void
-pqueue_print(pqueue_t *q, 
+pqueue_print(pqueue_t *q,
              FILE *out,
              pqueue_print_entry_f print);
 
@@ -175,7 +175,7 @@ pqueue_print(pqueue_t *q,
  * @param the callback function to print the entry
  */
 void
-pqueue_dump(pqueue_t *q, 
+pqueue_dump(pqueue_t *q,
              FILE *out,
              pqueue_print_entry_f print);
 

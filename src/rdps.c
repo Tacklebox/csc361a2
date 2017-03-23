@@ -6,7 +6,9 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
+
 
 #include "../util/util.h"
 
@@ -15,8 +17,6 @@ int send_port;
 char* send_ip;
 int recv_port;
 char* recv_ip;
-char* file_name;
-FILE* file_pointer;
 
 int main(int argc, char* argv[])
 {
@@ -28,21 +28,22 @@ int main(int argc, char* argv[])
   file_name = argv[5];
   file_pointer = fopen(file_name, "r");
 
-  struct sockaddr_in server_addr;
+  srand(time(NULL));
+  init_seq_num = rand();
 
   bind_socket(send_port, send_ip);
 
-  memset(&server_addr, 0, sizeof server_addr);
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_addr.s_addr = inet_addr(recv_ip);
-  server_addr.sin_port = htons(recv_port);
+  memset(&sockaddr_other, 0, sizeof sockaddr_other);
+  sockaddr_other.sin_family = AF_INET;
+  sockaddr_other.sin_addr.s_addr = inet_addr(recv_ip);
+  sockaddr_other.sin_port = htons(recv_port);
 
   packet mypacket;
-  strcpy(mypacket._magic_, "CSC361");
   mypacket._type_ = DAT;
   mypacket._seqno_or_ackno_ = 1337;
   mypacket._length_or_size_ = 11;
   strcpy(mypacket._data_, "0123456789");
+  send_packet(mypacket);
 
   close(sock); /* close the socket */
   return 0;

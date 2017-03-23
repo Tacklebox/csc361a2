@@ -18,8 +18,6 @@
 // UDP Server
 int recv_port;
 char *recv_ip;
-char *file_name;
-FILE *file_pointer;
 
 ssize_t recsize;
 socklen_t fromlen;
@@ -35,13 +33,32 @@ int main(int argc, char *argv[]) {
   state = IDLE;
 
   while(1) {
-    packet recv_pkt;
-    recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
-    if (recsize < 0) {
+    fd_set file_descriptor_set;
+    FD_ZERO(&file_descriptor_set);
+    FD_SET(sock, &file_descriptor_set);
+    struct timeval tv = {0,0};
+    tv.tv_usec = (state == TWAIT) ? 50000 : 5000;
+    if (select(sock+1, &file_descriptor_set, NULL, NULL, &tv) == -1) {
       fprintf(stderr, "%s\n", strerror(errno));
       exit(EXIT_FAILURE);
-    } else if (recsize > 0) {
-      handle_packet(recv_pkt);
+    } else {
+      if (FD_ISSET(sock,&file_descriptor_set)) {
+        packet recv_pkt;
+        recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+        if (recsize < 0) {
+          fprintf(stderr, "%s\n", strerror(errno));
+          exit(EXIT_FAILURE);
+        } else if (recsize > 0) {
+          handle_packet(recv_pkt);
+        }
+      } else {
+        if (state == TWAIT) {
+          close(sock);
+          exit(EXIT_SUCCESS);
+        }
+        printf("buffer maintenance time!\n");
+        //maintain_buffer();
+      }
     }
   }
   return 0;
