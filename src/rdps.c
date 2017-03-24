@@ -28,23 +28,98 @@ int main(int argc, char* argv[])
   file_name = argv[5];
   file_pointer = fopen(file_name, "r");
 
+  bind_socket(send_port, send_ip);
+
   srand(time(NULL));
   init_seq_num = rand();
 
-  bind_socket(send_port, send_ip);
+  if (!initialise_queue()) {
+    fprintf(stderr, "Error: Couldn't allocate Packet Queue\n");
+    free_and_close();
+    exit(EXIT_FAILURE);
+  }
 
   memset(&sockaddr_other, 0, sizeof sockaddr_other);
   sockaddr_other.sin_family = AF_INET;
   sockaddr_other.sin_addr.s_addr = inet_addr(recv_ip);
   sockaddr_other.sin_port = htons(recv_port);
 
-  packet mypacket;
-  mypacket._type_ = DAT;
-  mypacket._seqno_or_ackno_ = 1337;
-  mypacket._length_or_size_ = 11;
-  strcpy(mypacket._data_, "0123456789");
-  send_packet(mypacket);
+  do {
+    state = HIP;
+    send_syn();
+    fd_set file_descriptor_set;
+    FD_ZERO(&file_descriptor_set);
+    FD_SET(sock, &file_descriptor_set);
+    struct timeval tv = {0,24000};
+    if (select(sock+1, &file_descriptor_set, NULL, NULL, &tv) == -1) {
+      fprintf(stderr, "%s\n", strerror(errno));
+      exit(EXIT_FAILURE);
+    } else {
+      if (FD_ISSET(sock,&file_descriptor_set)) {
+        packet recv_pkt;
+        recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+        if (recsize < 0) {
+          fprintf(stderr, "%s\n", strerror(errno));
+          exit(EXIT_FAILURE);
+        } else if (recsize > 0) {
+          handle_packet(recv_pkt);
+        }
+      }
+    }
+    repeat = 1;
+  } while (state==HIP);
+  repeat = 0;
 
-  close(sock); /* close the socket */
+  last_packet_acked = 0;
+  while(!last_packet_acked) {
+    fd_set file_descriptor_set;
+    FD_ZERO(&file_descriptor_set);
+    FD_SET(sock, &file_descriptor_set);
+    struct timeval tv = {0,10};
+    if (select(sock+1, &file_descriptor_set, NULL, NULL, &tv) == -1) {
+      fprintf(stderr, "%s\n", strerror(errno));
+      exit(EXIT_FAILURE);
+    } else {
+      if (FD_ISSET(sock,&file_descriptor_set)) {
+        packet recv_pkt;
+        recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+        if (recsize < 0) {
+          fprintf(stderr, "%s\n", strerror(errno));
+          exit(EXIT_FAILURE);
+        } else if (recsize > 0) {
+          handle_packet(recv_pkt);
+        }
+      } else {
+        filter_OB();
+      }
+    }
+  }
+
+  char unfinished = 1;
+  do {
+    send_fin();
+    fd_set file_descriptor_set;
+    FD_ZERO(&file_descriptor_set);
+    FD_SET(sock, &file_descriptor_set);
+    struct timeval tv = {0,20000};
+    if (select(sock+1, &file_descriptor_set, NULL, NULL, &tv) == -1) {
+      fprintf(stderr, "%s\n", strerror(errno));
+      exit(EXIT_FAILURE);
+    } else {
+      if (FD_ISSET(sock,&file_descriptor_set)) {
+        packet recv_pkt;
+        recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
+        if (recsize < 0) {
+          fprintf(stderr, "%s\n", strerror(errno));
+          exit(EXIT_FAILURE);
+        } else if (recsize > 0) {
+          if (recv_pkt._type_ == ACK)
+            unfinished = 0;
+        }
+      }
+    }
+    repeat = 1;
+  } while (unfinished);
+  free_and_close();
   return 0;
 }

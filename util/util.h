@@ -32,13 +32,20 @@ typedef union packet {
   struct {
     char _magic_[MAGIC_LENGTH+1]; //"CSC361"
     packet_type _type_;           //From ENUM above
-    pqueue_pri_t _seqno_or_ackno_;         //Sequence Number if SYN, FYN, or DAT Acknowledge Number if ACK
+    unsigned int _seqno_or_ackno_;         //Sequence Number if SYN, FYN, or DAT Acknowledge Number if ACK
     int _length_or_size_;         //Payload Length if DAT Window Size if ACK
     char _data_[DATA_LENGTH];     //Actual Data
   };
 
   char buf[MAXIMUM_SEGMENT_SIZE];
 } packet;
+
+typedef struct node_t
+{
+  pqueue_pri_t pri;
+  packet pkt;
+  size_t pos;
+} node_t;
 
 /*
 typdef struct packet_queue {
@@ -48,9 +55,15 @@ typdef struct packet_queue {
 */
 
 int bind_socket(int, char*);
+int initialise_queue();
+void filter_IB();
+void filter_OB();
+void free_and_close();
 void handle_packet(packet);
 void log_event(event_type, packet);
 void make_packet(packet*, packet_type, int, char*, int);
+void send_syn();
+void send_fin();
 void send_ack(int);
 void send_packet(packet);
 
@@ -60,5 +73,11 @@ extern struct sockaddr_in sockaddr_self, sockaddr_other;
 extern connection_state state;
 extern char* file_name;
 extern FILE* file_pointer;
+extern pqueue_t *pq;
+extern node_t   *n;
+extern ssize_t recsize;
+extern socklen_t fromlen;
+extern char last_packet_acked, repeat;
+
 
 #endif

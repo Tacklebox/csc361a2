@@ -19,8 +19,6 @@
 int recv_port;
 char *recv_ip;
 
-ssize_t recsize;
-socklen_t fromlen;
 
 int main(int argc, char *argv[]) {
   recv_ip = argv[1];
@@ -30,8 +28,18 @@ int main(int argc, char *argv[]) {
   fromlen = sizeof(struct sockaddr_in);
 
   bind_socket(recv_port, recv_ip);
+
+  if (!initialise_queue()) {
+    fprintf(stderr, "Error: Couldn't allocate Packet Queue\n");
+    free_and_close();
+    exit(EXIT_FAILURE);
+  }
+
+  window_size = 32;
+
   state = IDLE;
 
+  char new_packets = 0;
   while(1) {
     fd_set file_descriptor_set;
     FD_ZERO(&file_descriptor_set);
@@ -43,6 +51,7 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     } else {
       if (FD_ISSET(sock,&file_descriptor_set)) {
+        new_packets = 1;
         packet recv_pkt;
         recsize = recvfrom(sock, (void *)recv_pkt.buf, MAXIMUM_SEGMENT_SIZE, 0, (struct sockaddr *)&sockaddr_other, &fromlen);
         if (recsize < 0) {
@@ -51,13 +60,14 @@ int main(int argc, char *argv[]) {
         } else if (recsize > 0) {
           handle_packet(recv_pkt);
         }
-      } else {
+      } else if (state != IDLE) {
         if (state == TWAIT) {
-          close(sock);
+          free_and_close();
           exit(EXIT_SUCCESS);
         }
-        printf("buffer maintenance time!\n");
-        //maintain_buffer();
+        if (new_packets)
+          filter_IB();
+        new_packets = 0;
       }
     }
   }

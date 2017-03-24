@@ -67,7 +67,7 @@ main(void)
   n = pqueue_peek(pq);
   printf("peek: %d [%d]\n", n->pri, n->val);
 
-  pqueue_change_priority(pq, 8, &ns[4]);
+  pqueue_change_priority(pq, 4, &ns[4]);
   pqueue_change_priority(pq, 7, &ns[2]);
 
      while ((n = pqueue_pop(pq)))
