@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  window_size = 32;
+  window_size = 5;
 
   state = IDLE;
 

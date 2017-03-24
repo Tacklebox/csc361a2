@@ -28,8 +28,8 @@ pqueue_t *pq;
 node_t   *n;
 ssize_t recsize;
 socklen_t fromlen;
-char last_data_packet_created, last_packet_acked, repeat;
-unsigned long long retransmission_timeout = 100000;
+char last_data_packet_created = 0, last_packet_acked, repeat;
+unsigned long long retransmission_timeout = 1000000;
 
 int bind_socket(int port, char* ip) {
   int option = 1;
@@ -68,19 +68,15 @@ void free_and_close() {
 int make_next_dat_packet(packet* p) {
   char p_d[DATA_LENGTH];
   int p_d_l;
-  if (file_pointer != NULL) {
-    if ((p_d_l = fread(p_d, 1, DATA_LENGTH, file_pointer)) < 0) {
-      //TODO: spam RST
-      free_and_close();
-      fprintf(stderr, "Error: File I/O error\n");
-      exit(EXIT_FAILURE);
-    } else if (p_d_l < DATA_LENGTH) {
-      return 0;
-    }
-    make_packet(p, DAT, sseq_edge, p_d, p_d_l);
-    sseq_edge += p_d_l;
+  if ((p_d_l = fread(p_d, 1, DATA_LENGTH, file_pointer)) < 0) {
+    //TODO: spam RST
+    free_and_close();
+    fprintf(stderr, "Error: File I/O error\n");
+    exit(EXIT_FAILURE);
   }
-  return 1;
+  make_packet(p, DAT, sseq_edge, p_d, p_d_l);
+  sseq_edge += p_d_l;
+  return (p_d_l < DATA_LENGTH);
 }
 
 void make_packet(packet* p, packet_type p_t, int s_a, char* p_d, int p_d_l) {
@@ -115,6 +111,12 @@ void send_ack(int ack_no) {
   packet pkt;
   make_packet(&pkt,ACK,ack_no,NULL,0);
   send_packet(pkt);
+  if (g_ack < ack_no) {
+    g_ack = ack_no;
+    log_event(s,pkt);
+  } else {
+    log_event(S,pkt);
+  }
 }
 
 void send_syn() {
@@ -141,11 +143,10 @@ void send_fin() {
 
 void write_packet_to_file(packet pkt) {
   if (file_pointer != NULL) {
-    if (fread(pkt._data_, pkt._length_or_size_, 1, file_pointer) != 1) {
+    if (fwrite(pkt._data_, pkt._length_or_size_, 1, file_pointer) == 1) {
       return;
     }
   }
-  //TODO: spam RST
   free_and_close();
   fprintf(stderr, "Error: File I/O error\n");
   exit(EXIT_FAILURE);
@@ -176,18 +177,17 @@ void filter_OB() {
     while (pqueue_size(pq) < window_size) {
       n = malloc(sizeof(node_t));
       packet tmp;
-      if (make_next_dat_packet(&tmp)) {
-        last_data_packet_created = 1;
-      }
+      last_data_packet_created = make_next_dat_packet(&tmp);
       n->pkt = tmp;
       n->pri = now();
       send_packet(n->pkt);
       log_event(s,n->pkt);
-      pqueue_insert(pq, &n);
-      printf("%lu\n",pqueue_size(pq));
+      pqueue_insert(pq, n);
     }
   }
   n = pqueue_peek(pq);
+  if(n != NULL && (n->pkt._seqno_or_ackno_ < g_ack || check_expired(n->pri))) {
+  }
   while(n != NULL && (n->pkt._seqno_or_ackno_ < g_ack || check_expired(n->pri))) {
     if (n->pkt._seqno_or_ackno_ < g_ack) {
       pqueue_pop(pq);
@@ -230,7 +230,7 @@ void handle_packet(packet pkt) {
       n = malloc(sizeof(node_t));
       n->pri = pkt._seqno_or_ackno_;
       n->pkt = pkt;
-      pqueue_insert(pq, &n);
+      pqueue_insert(pq, n);
       break;
 
     case FIN:
@@ -317,7 +317,7 @@ int get_file_size(char *filename) {
  * Functions for apache PRIO Q
  */
 static int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
-  return (next < curr);
+  return (next > curr);
 }
 
 
