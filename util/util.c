@@ -261,7 +261,7 @@ void handle_packet(packet pkt) {
       break;
 
     case ACK:
-      stats.fin++;
+      stats.ack++;
       if (pkt._seqno_or_ackno_ == (init_seq_num + 1) && state == HIP) {
         state = CONN;
         stats.start_time = now();
@@ -325,7 +325,7 @@ void print_statistics(char is_sender) {
   unsigned long long endtime = now();
   endtime -= stats.start_time;
   if (!is_sender) {
-  printf("total data bytes received: %u\nunique data bytes received: %u\ntotal data packets received: %u\nunique data packets received: %u\nSYN packets received: %u\nFIN packets received: %u\nRST packets received: 0\nACK packets sent: %u\nRST packets sent: 0\ntotal time duration (second): %lu.%05lu",
+  printf("total data bytes received: %u\nunique data bytes received: %u\ntotal data packets received: %u\nunique data packets received: %u\nSYN packets received: %u\nFIN packets received: %u\nRST packets received: 0\nACK packets sent: %u\nRST packets sent: 0\ntotal time duration (second): %llu.%05llu\n",
       stats.total_data,
       stats.unique_data,
       stats.total_packets,
@@ -336,7 +336,7 @@ void print_statistics(char is_sender) {
       endtime/1000000,
       endtime%1000000);
   } else {
-  printf("total data bytes sent: %u\nunique data bytes sent: %u\ntotal data packets sent: %u\nunique data packets sent: %u\nSYN packets sent: %u\nFIN packets sent: %u\nRST packets sent: 0\nACK packets received: %u\nRST packets received: 0\ntotal time duration (second): %lu.%05lu",
+  printf("total data bytes sent: %u\nunique data bytes sent: %u\ntotal data packets sent: %u\nunique data packets sent: %u\nSYN packets sent: %u\nFIN packets sent: %u\nRST packets sent: 0\nACK packets received: %u\nRST packets received: 0\ntotal time duration (second): %llu.%05llu\n",
       stats.total_data,
       stats.unique_data,
       stats.total_packets,
