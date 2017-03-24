@@ -106,6 +106,7 @@ void send_packet(packet pkt) {
 }
 
 void send_ack(int ack_no) {
+  stats.ack++;
   packet pkt;
   make_packet(&pkt,ACK,ack_no,NULL,0);
   send_packet(pkt);
@@ -188,6 +189,10 @@ void filter_OB() {
     }
     n->pkt = tmp;
     n->pri = now();
+    stats.unique_data+=tmp._length_or_size_;
+    stats.unique_packets++;
+    stats.total_data+=tmp._length_or_size_;
+    stats.total_packets++;
     send_packet(n->pkt);
     log_event(s,n->pkt);
     pqueue_insert(pq, n);
@@ -200,6 +205,8 @@ void filter_OB() {
       free(pqueue_pop(pq));
     } else {
       send_packet(n->pkt);
+      stats.total_data+=n->pkt._length_or_size_;
+      stats.total_packets++;
       log_event(S,n->pkt);
       pqueue_change_priority(pq, now(), n);
     }
@@ -237,7 +244,7 @@ void handle_packet(packet pkt) {
         exit(EXIT_FAILURE);
       }
       stats.total_data += pkt._length_or_size_;
-      stats.unique_packets++;
+      stats.total_packets++;
       n = malloc(sizeof(node_t));
       n->pri = pkt._seqno_or_ackno_;
       n->pkt = pkt;
@@ -318,7 +325,7 @@ void print_statistics(char is_sender) {
   unsigned long long endtime = now();
   endtime -= stats.start_time;
   if (!is_sender) {
-  printf("total data bytes received: %u\n unique data bytes received: %u\ntotal data packets received: %u\nunique data packets received: %u\nSYN packets received: %u\nFIN packets received: %u\nRST packets received: 0\nACK packets sent: %u\nRST packets sent: 0\ntotal time duration (second): %lu.%05lu",
+  printf("total data bytes received: %u\nunique data bytes received: %u\ntotal data packets received: %u\nunique data packets received: %u\nSYN packets received: %u\nFIN packets received: %u\nRST packets received: 0\nACK packets sent: %u\nRST packets sent: 0\ntotal time duration (second): %lu.%05lu",
       stats.total_data,
       stats.unique_data,
       stats.total_packets,
@@ -329,7 +336,7 @@ void print_statistics(char is_sender) {
       endtime/1000000,
       endtime%1000000);
   } else {
-  printf("total data bytes sent: %u\n unique data bytes sent: %u\ntotal data packets sent: %u\nunique data packets sent: %u\nSYN packets sent: %u\nFIN packets sent: %u\nRST packets sent: 0\nACK packets received: %u\nRST packets received: 0\ntotal time duration (second): %lu.%05lu",
+  printf("total data bytes sent: %u\nunique data bytes sent: %u\ntotal data packets sent: %u\nunique data packets sent: %u\nSYN packets sent: %u\nFIN packets sent: %u\nRST packets sent: 0\nACK packets received: %u\nRST packets received: 0\ntotal time duration (second): %lu.%05lu",
       stats.total_data,
       stats.unique_data,
       stats.total_packets,
