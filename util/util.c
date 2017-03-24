@@ -15,22 +15,19 @@
 #include "util.h"
 #include "pqueue.h"
 
-int sock, window_size;
+int sock, window_size, bytes_written = 0;
 unsigned int init_seq_num, rseq_edge, sseq_edge, g_ack, last_expected_ack = 0;
 struct sockaddr_in sockaddr_self, sockaddr_other;
 connection_state state;
-char* file_name;
-FILE* file_pointer;
-char* packet_type_strings[] = {"DAT", "ACK", "SYN", "FIN", "RST"};
-char* event_strings[] = {"s","S","r","R"};
-int fast_retransmit_counter = 0;
+con_stat stats;
+char* file_name; FILE* file_pointer;
+char* packet_type_strings[] = {"DAT", "ACK", "SYN", "FIN", "RST"};char* event_strings[] = {"s","S","r","R"};
 pqueue_t *pq;
 node_t   *n;
 ssize_t recsize;
 socklen_t fromlen;
 char last_data_packet_created = 0, last_packet_acked = 0, repeat, new_packets = 0;
 unsigned long long retransmission_timeout = 1000000;
-int bytes_written = 0;
 
 int bind_socket(int port, char* ip) {
   int option = 1;
@@ -169,7 +166,8 @@ void filter_IB() {
     if (n->pkt._seqno_or_ackno_ == rseq_edge) {
       write_packet_to_file(n->pkt);
       rseq_edge += n->pkt._length_or_size_;
-      bytes_written += n->pkt._length_or_size_;
+      stats.unique_packets++;
+      stats.unique_data += n->pkt._length_or_size_;
       free(n);
     } else {
     }
@@ -229,13 +227,15 @@ void handle_packet(packet pkt) {
     case DAT:
       if (state == HIP) {
         state=CONN;
-        //TODO: start a timer for stats
+        stats.start_time = now();
       } else if (state != CONN) {
         fprintf(stderr, "Error: Out of bounds packet\n");
         reset_connection();
         free_and_close();
         exit(EXIT_FAILURE);
       }
+      stats.total_data += pkt._length_or_size_;
+      stats.unique_packets++;
       n = malloc(sizeof(node_t));
       n->pri = pkt._seqno_or_ackno_;
       n->pkt = pkt;
@@ -243,6 +243,7 @@ void handle_packet(packet pkt) {
       break;
 
     case FIN:
+      stats.fin++;
       if (pkt._seqno_or_ackno_ == rseq_edge) {
         state = TWAIT;
         send_ack(pkt._seqno_or_ackno_+1);
@@ -251,8 +252,10 @@ void handle_packet(packet pkt) {
       break;
 
     case ACK:
+      stats.fin++;
       if (pkt._seqno_or_ackno_ == (init_seq_num + 1) && state == HIP) {
         state = CONN;
+        stats.start_time = now();
         sseq_edge = init_seq_num + 1;
       }
       if (pkt._seqno_or_ackno_ == last_expected_ack) {
@@ -265,6 +268,7 @@ void handle_packet(packet pkt) {
       break;
 
     case SYN:
+      stats.syn++;
       init_seq_num = pkt._seqno_or_ackno_;
       rseq_edge = init_seq_num + 1;
       send_ack(rseq_edge);

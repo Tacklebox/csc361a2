@@ -14,6 +14,17 @@ typedef enum connection_state {
   TWAIT
 } connection_state;
 
+typedef struct con_stat {
+  unsigned int total_data;
+  unsigned int unique_data;
+  unsigned int total_packets;
+  unsigned int unique_packets;
+  unsigned int syn;
+  unsigned int fin;
+  unsigned int ack;
+  unsigned long long start_time;
+} con_stat;
+
 typedef enum packet_type {
   DAT,
   ACK,
@@ -48,13 +59,6 @@ typedef struct node_t
   size_t pos;
 } node_t;
 
-/*
-typdef struct packet_queue {
-  packet* this;
-  struct packet_queue* next;
-} packet_queue;
-*/
-
 int bind_socket(int, char*);
 int initialise_queue();
 void filter_IB();
@@ -79,7 +83,7 @@ extern pqueue_t *pq;
 extern node_t   *n;
 extern ssize_t recsize;
 extern socklen_t fromlen;
+extern con_stat stats;
 extern char last_packet_acked, repeat, new_packets;
-
 
 #endif

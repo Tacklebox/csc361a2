@@ -28,6 +28,8 @@ int main(int argc, char* argv[])
   file_name = argv[5];
   file_pointer = fopen(file_name, "r");
 
+  memset(&stats, 0, sizeof stats);
+
   bind_socket(send_port, send_ip);
 
   srand(time(NULL));

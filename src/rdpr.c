@@ -26,6 +26,8 @@ int main(int argc, char *argv[]) {
   file_pointer = fopen(file_name, "w");
   fromlen = sizeof(struct sockaddr_in);
 
+  memset(&stats, 0, sizeof stats);
+
   bind_socket(recv_port, recv_ip);
 
   if (!initialise_queue()) {
