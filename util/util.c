@@ -88,7 +88,7 @@ void make_packet(packet* p, packet_type p_t, int s_a, char* p_d, int p_d_l) {
     unsigned int roll_remaining = (UINT_MAX - rseq_edge) / MAXIMUM_SEGMENT_SIZE;
     roll_remaining = (roll_remaining)?roll_remaining:1;
     p->_length_or_size_ = (window_size <= roll_remaining)? window_size:roll_remaining;
-  } else if (p_t == SYN) {
+  } else if (p_t == SYN || p_t == FIN) {
     p->_length_or_size_ = 0;
   } else if (p_t == DAT && p_d_l > 0) {
     p->_length_or_size_ = p_d_l;
