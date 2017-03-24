@@ -204,7 +204,8 @@ void filter_OB() {
 void reset_connection() {
   packet pkt;
   make_packet(&pkt,RST,0,NULL,0);
-  for(int i = 0; i<3; i++) {
+  int i;
+  for(i = 0; i<3; i++) {
     send_packet(pkt);
   }
 }
