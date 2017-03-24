@@ -179,19 +179,18 @@ void filter_OB() {
       if (make_next_dat_packet(&tmp)) {
         last_data_packet_created = 1;
       }
-      printf("%s\n", tmp._magic_);
-      send_packet(tmp);
       n->pkt = tmp;
       n->pri = now();
-      log_event(s,tmp);
+      send_packet(n->pkt);
+      log_event(s,n->pkt);
       pqueue_insert(pq, &n);
+      printf("%lu\n",pqueue_size(pq));
     }
   }
   n = pqueue_peek(pq);
   while(n != NULL && (n->pkt._seqno_or_ackno_ < g_ack || check_expired(n->pri))) {
     if (n->pkt._seqno_or_ackno_ < g_ack) {
-      n = pqueue_pop(pq);
-      free(n);
+      pqueue_pop(pq);
     } else {
       send_packet(n->pkt);
       log_event(S,n->pkt);
@@ -227,7 +226,6 @@ void handle_packet(packet pkt) {
         free_and_close();
         exit(EXIT_FAILURE);
       }
-      log_event(r,pkt);
       n = malloc(sizeof(node_t));
       n->pri = pkt._seqno_or_ackno_;
       n->pkt = pkt;
