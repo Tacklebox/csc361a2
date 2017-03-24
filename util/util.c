@@ -118,6 +118,7 @@ void send_ack(int ack_no) {
 }
 
 void send_syn() {
+  stats.syn++;
   packet pkt;
   make_packet(&pkt,SYN,init_seq_num,NULL,0);
   send_packet(pkt);
@@ -129,6 +130,7 @@ void send_syn() {
 }
 
 void send_fin() {
+  stats.fin++;
   packet pkt;
   make_packet(&pkt,FIN,g_ack,NULL,0);
   send_packet(pkt);
@@ -309,6 +311,34 @@ void log_event(event_type e, packet pkt) {
       printf("%s:%d ", inet_ntoa(sockaddr_self.sin_addr), ntohs(sockaddr_self.sin_port));
     }
     printf("%s %d %d\n", packet_type_strings[pkt._type_], pkt._seqno_or_ackno_, pkt._length_or_size_);
+  }
+}
+
+void print_statistics(char is_sender) {
+  unsigned long long endtime = now();
+  endtime -= stats.start_time;
+  if (!is_sender) {
+  printf("total data bytes received: %u\n unique data bytes received: %u\ntotal data packets received: %u\nunique data packets received: %u\nSYN packets received: %u\nFIN packets received: %u\nRST packets received: 0\nACK packets sent: %u\nRST packets sent: 0\ntotal time duration (second): %lu.%05lu",
+      stats.total_data,
+      stats.unique_data,
+      stats.total_packets,
+      stats.unique_packets,
+      stats.syn,
+      stats.fin,
+      stats.ack,
+      endtime/1000000,
+      endtime%1000000);
+  } else {
+  printf("total data bytes sent: %u\n unique data bytes sent: %u\ntotal data packets sent: %u\nunique data packets sent: %u\nSYN packets sent: %u\nFIN packets sent: %u\nRST packets sent: 0\nACK packets received: %u\nRST packets received: 0\ntotal time duration (second): %lu.%05lu",
+      stats.total_data,
+      stats.unique_data,
+      stats.total_packets,
+      stats.unique_packets,
+      stats.syn,
+      stats.fin,
+      stats.ack,
+      endtime/1000000,
+      endtime%1000000);
   }
 }
 

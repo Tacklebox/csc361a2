@@ -116,12 +116,14 @@ int main(int argc, char* argv[])
         } else if (recsize > 0) {
           log_event(r,recv_pkt);
           if (recv_pkt._type_ == ACK || recv_pkt._type_ == RST)
+            stats.ack++;
             unfinished = 0;
         }
       }
     }
     repeat = 1;
   } while (unfinished);
+  print_statistics(1);
   free_and_close();
   return 0;
 }

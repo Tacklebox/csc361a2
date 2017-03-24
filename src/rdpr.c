@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
         }
       } else if (state != IDLE) {
         if (state == TWAIT) {
+          print_statistics(0);
           free_and_close();
           exit(EXIT_SUCCESS);
         }

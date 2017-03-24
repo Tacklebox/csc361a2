@@ -70,6 +70,7 @@ void log_event(event_type, packet);
 void make_packet(packet*, packet_type, int, char*, int);
 void send_syn();
 void send_fin();
+void print_statistics(char);
 void send_ack(int);
 void send_packet(packet);
 
