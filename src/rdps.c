@@ -115,9 +115,10 @@ int main(int argc, char* argv[])
           exit(EXIT_FAILURE);
         } else if (recsize > 0) {
           log_event(r,recv_pkt);
-          if (recv_pkt._type_ == ACK || recv_pkt._type_ == RST)
+          if (recv_pkt._type_ == ACK || recv_pkt._type_ == RST){
             stats.ack++;
             unfinished = 0;
+          }
         }
       }
     }
