@@ -19,7 +19,6 @@
 int recv_port;
 char *recv_ip;
 
-
 int main(int argc, char *argv[]) {
   recv_ip = argv[1];
   recv_port = atoi(argv[2]);
@@ -35,11 +34,10 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  window_size = 5;
+  window_size = 32;
 
   state = IDLE;
 
-  char new_packets = 0;
   while(1) {
     fd_set file_descriptor_set;
     FD_ZERO(&file_descriptor_set);

@@ -16,7 +16,7 @@
 #include "pqueue.h"
 
 int sock, window_size;
-unsigned int init_seq_num, rseq_edge, sseq_edge, g_ack;
+unsigned int init_seq_num, rseq_edge, sseq_edge, g_ack, last_expected_ack = 0;
 struct sockaddr_in sockaddr_self, sockaddr_other;
 connection_state state;
 char* file_name;
@@ -28,8 +28,9 @@ pqueue_t *pq;
 node_t   *n;
 ssize_t recsize;
 socklen_t fromlen;
-char last_data_packet_created = 0, last_packet_acked, repeat;
+char last_data_packet_created = 0, last_packet_acked = 0, repeat, new_packets = 0;
 unsigned long long retransmission_timeout = 1000000;
+int bytes_written = 0;
 
 int bind_socket(int port, char* ip) {
   int option = 1;
@@ -61,7 +62,7 @@ int bind_socket(int port, char* ip) {
 
 void free_and_close() {
   pqueue_free(pq);
-  free_and_close();
+  close(sock);
   fclose(file_pointer);
 }
 
@@ -69,7 +70,7 @@ int make_next_dat_packet(packet* p) {
   char p_d[DATA_LENGTH];
   int p_d_l;
   if ((p_d_l = fread(p_d, 1, DATA_LENGTH, file_pointer)) < 0) {
-    //TODO: spam RST
+    reset_connection();
     free_and_close();
     fprintf(stderr, "Error: File I/O error\n");
     exit(EXIT_FAILURE);
@@ -132,7 +133,7 @@ void send_syn() {
 
 void send_fin() {
   packet pkt;
-  make_packet(&pkt,FIN,g_ack+1,NULL,0);
+  make_packet(&pkt,FIN,g_ack,NULL,0);
   send_packet(pkt);
   if (repeat) {
     log_event(S,pkt);
@@ -147,6 +148,7 @@ void write_packet_to_file(packet pkt) {
       return;
     }
   }
+  reset_connection(); 
   free_and_close();
   fprintf(stderr, "Error: File I/O error\n");
   exit(EXIT_FAILURE);
@@ -167,30 +169,35 @@ void filter_IB() {
     if (n->pkt._seqno_or_ackno_ == rseq_edge) {
       write_packet_to_file(n->pkt);
       rseq_edge += n->pkt._length_or_size_;
+      bytes_written += n->pkt._length_or_size_;
+      free(n);
+    } else {
     }
   }
+  fflush(file_pointer);
   send_ack(rseq_edge);
 }
 
 void filter_OB() {
-  if (!last_data_packet_created) {
-    while (pqueue_size(pq) < window_size) {
-      n = malloc(sizeof(node_t));
-      packet tmp;
-      last_data_packet_created = make_next_dat_packet(&tmp);
-      n->pkt = tmp;
-      n->pri = now();
-      send_packet(n->pkt);
-      log_event(s,n->pkt);
-      pqueue_insert(pq, n);
+  while (!last_data_packet_created && (pqueue_size(pq) < window_size)) {
+    n = malloc(sizeof(node_t));
+    packet tmp;
+    if (make_next_dat_packet(&tmp)) {
+      last_data_packet_created = 1;
+      last_expected_ack = tmp._seqno_or_ackno_ + tmp._length_or_size_;
     }
+    n->pkt = tmp;
+    n->pri = now();
+    send_packet(n->pkt);
+    log_event(s,n->pkt);
+    pqueue_insert(pq, n);
   }
   n = pqueue_peek(pq);
   if(n != NULL && (n->pkt._seqno_or_ackno_ < g_ack || check_expired(n->pri))) {
   }
   while(n != NULL && (n->pkt._seqno_or_ackno_ < g_ack || check_expired(n->pri))) {
     if (n->pkt._seqno_or_ackno_ < g_ack) {
-      pqueue_pop(pq);
+      free(pqueue_pop(pq));
     } else {
       send_packet(n->pkt);
       log_event(S,n->pkt);
@@ -213,6 +220,7 @@ void reset_connection() {
 void handle_packet(packet pkt) {
   if (strncmp(pkt._magic_,"CSC361",MAGIC_LENGTH)) {
     fprintf(stderr, "Error: Not a magic packet\n");
+    reset_connection();
     free_and_close();
     exit(EXIT_FAILURE);
   }
@@ -224,6 +232,7 @@ void handle_packet(packet pkt) {
         //TODO: start a timer for stats
       } else if (state != CONN) {
         fprintf(stderr, "Error: Out of bounds packet\n");
+        reset_connection();
         free_and_close();
         exit(EXIT_FAILURE);
       }
@@ -237,6 +246,7 @@ void handle_packet(packet pkt) {
       if (pkt._seqno_or_ackno_ == rseq_edge) {
         state = TWAIT;
         send_ack(pkt._seqno_or_ackno_+1);
+        new_packets = 0;
       }
       break;
 
@@ -245,16 +255,10 @@ void handle_packet(packet pkt) {
         state = CONN;
         sseq_edge = init_seq_num + 1;
       }
-      if (pkt._seqno_or_ackno_ == g_ack) {
-        fast_retransmit_counter++;
-        if (fast_retransmit_counter > 2) {
-          //TODO: perform FRT
-        }
-      } else if (pkt._seqno_or_ackno_ < g_ack) {
-        //ignore lower out of order ack
-        fast_retransmit_counter = 0;
-      } else {
-        fast_retransmit_counter = 0;
+      if (pkt._seqno_or_ackno_ == last_expected_ack) {
+        last_packet_acked = 1;
+      }
+      if (pkt._seqno_or_ackno_ > g_ack) {
         g_ack = pkt._seqno_or_ackno_;
         window_size = pkt._length_or_size_;
       }
@@ -275,6 +279,7 @@ void handle_packet(packet pkt) {
 
     default:
       fprintf(stderr, "Error: Unknown or malformed packet _type_\n");
+      reset_connection();
       free_and_close();
       exit(EXIT_FAILURE);
   }

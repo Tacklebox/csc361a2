@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
   bind_socket(send_port, send_ip);
 
   srand(time(NULL));
-  init_seq_num = rand();
+  init_seq_num = rand()%100000;
 
   if (!initialise_queue()) {
     fprintf(stderr, "Error: Couldn't allocate Packet Queue\n");
@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
   } while (state==HIP);
   repeat = 0;
 
-  last_packet_acked = 0;
   while(!last_packet_acked) {
     fd_set file_descriptor_set;
     FD_ZERO(&file_descriptor_set);
@@ -113,7 +112,8 @@ int main(int argc, char* argv[])
           fprintf(stderr, "%s\n", strerror(errno));
           exit(EXIT_FAILURE);
         } else if (recsize > 0) {
-          if (recv_pkt._type_ == ACK)
+          log_event(r,recv_pkt);
+          if (recv_pkt._type_ == ACK || recv_pkt._type_ == RST)
             unfinished = 0;
         }
       }

@@ -10,6 +10,7 @@ typedef enum connection_state {
   IDLE,
   HIP,
   CONN,
+  FIP,
   TWAIT
 } connection_state;
 
@@ -58,6 +59,7 @@ int bind_socket(int, char*);
 int initialise_queue();
 void filter_IB();
 void filter_OB();
+void reset_connection();
 void free_and_close();
 void handle_packet(packet);
 void log_event(event_type, packet);
@@ -77,7 +79,7 @@ extern pqueue_t *pq;
 extern node_t   *n;
 extern ssize_t recsize;
 extern socklen_t fromlen;
-extern char last_packet_acked, repeat;
+extern char last_packet_acked, repeat, new_packets;
 
 
 #endif
