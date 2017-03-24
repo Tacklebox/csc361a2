@@ -27,7 +27,7 @@ node_t   *n;
 ssize_t recsize;
 socklen_t fromlen;
 char last_data_packet_created = 0, last_packet_acked = 0, repeat, new_packets = 0;
-unsigned long long retransmission_timeout = 1000000;
+unsigned long long retransmission_timeout = 25000;
 
 int bind_socket(int port, char* ip) {
   int option = 1;
